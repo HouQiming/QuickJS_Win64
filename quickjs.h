@@ -38,6 +38,7 @@ extern "C" {
 #define js_force_inline       inline __attribute__((always_inline))
 #define __js_printf_like(f, a)   __attribute__((format(printf, f, a)))
 #else
+#include <malloc.h>
 #define js_likely(x)     (x)
 #define js_unlikely(x)   (x)
 #define js_force_inline  inline
@@ -53,7 +54,7 @@ typedef struct JSClass JSClass;
 typedef uint32_t JSClassID;
 typedef uint32_t JSAtom;
 
-#if defined(__x86_64__) || defined(__aarch64__)
+#if INTPTR_MAX==INT64_MAX
 #define JS_PTR64
 #define JS_PTR64_DEF(a) a
 #else
@@ -205,8 +206,13 @@ typedef struct JSValue {
 #define JS_VALUE_GET_FLOAT64(v) ((v).u.float64)
 #define JS_VALUE_GET_PTR(v) ((v).u.ptr)
 
+#ifdef _MSC_VER
+static inline JSValue JS_MKVAL(int64_t tag, int val){ JSValue ret;ret.u.int32 = val; ret.tag=tag; return ret;}
+static inline JSValue JS_MKPTR(int64_t tag, void* p){ JSValue ret;ret.u.ptr = p; ret.tag=tag; return ret;}
+#else
 #define JS_MKVAL(tag, val) (JSValue){ (JSValueUnion){ .int32 = val }, tag }
 #define JS_MKPTR(tag, p) (JSValue){ (JSValueUnion){ .ptr = p }, tag }
+#endif
 
 #define JS_TAG_IS_FLOAT64(tag) ((unsigned)(tag) == JS_TAG_FLOAT64)
 
@@ -581,13 +587,20 @@ static inline void JS_FreeValueRT(JSRuntime *rt, JSValue v)
     }
 }
 
+#ifdef _MSC_VER
+#define JS_VALUE_CAST
+#define JS_VALUE_CONST_CAST
+#else
+#define JS_VALUE_CAST (JSValue)
+#define JS_VALUE_CONST_CAST (JSValueConst)
+#endif
 static inline JSValue JS_DupValue(JSContext *ctx, JSValueConst v)
 {
     if (JS_VALUE_HAS_REF_COUNT(v)) {
         JSRefCountHeader *p = (JSRefCountHeader *)JS_VALUE_GET_PTR(v);
         p->ref_count++;
     }
-    return (JSValue)v;
+    return JS_VALUE_CAST v;
 }
 
 static inline JSValue JS_DupValueRT(JSRuntime *rt, JSValueConst v)
@@ -596,7 +609,7 @@ static inline JSValue JS_DupValueRT(JSRuntime *rt, JSValueConst v)
         JSRefCountHeader *p = (JSRefCountHeader *)JS_VALUE_GET_PTR(v);
         p->ref_count++;
     }
-    return (JSValue)v;
+    return JS_VALUE_CAST v;
 }
 
 int JS_ToBool(JSContext *ctx, JSValueConst val); /* return -1 for JS_EXCEPTION */
