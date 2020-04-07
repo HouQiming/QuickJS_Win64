@@ -303,6 +303,9 @@ function test_number()
     assert(parseFloat("-Infinity"), -Infinity);
     assert(parseFloat("123.2"), 123.2);
     assert(parseFloat("123.2e3"), 123200);
+    assert(Number.isNaN(Number("+")));
+    assert(Number.isNaN(Number("-")));
+    assert(Number.isNaN(Number("\x00a")));
 
     assert((25).toExponential(0), "3e+1");
     assert((-25).toExponential(0), "-3e+1");
@@ -498,6 +501,10 @@ function test_regexp()
     a = eval("/\0a/");
     assert(a.toString(), "/\0a/");
     assert(a.exec("\0a")[0], "\0a");
+
+    assert(/{1a}/.toString(), "/{1a}/");
+    a = /a{1+/.exec("a{11");
+    assert(a, ["a{11"] );
 }
 
 function test_symbol()

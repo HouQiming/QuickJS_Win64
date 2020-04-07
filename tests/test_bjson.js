@@ -1,4 +1,4 @@
-import * as bjson from "../bjson.so";
+import * as bjson from "./bjson.so";
 
 function assert(b, str)
 {
@@ -103,6 +103,12 @@ function bjson_test_all()
                    0.0 / BigFloat("0"), BigFloat.MAX_VALUE,
                    BigFloat.MIN_VALUE]);
         }, 113, 15);
+    }
+    if (typeof BigDecimal !== "undefined") {
+        bjson_test([BigDecimal("0"),
+                    BigDecimal("0.8"), BigDecimal("123321312321321e100"),
+                    BigDecimal("-1233213123213214332333223332e100"),
+                    BigDecimal("1.233e-1000")]);
     }
 
     /* tested with a circular reference */
